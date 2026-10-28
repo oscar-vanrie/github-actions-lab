@@ -1,0 +1,30 @@
+name: Kubernetes Deployment
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create namespace if missing
+        shell: powershell
+        run: kubectl create namespace demo --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply deployment and service
+        shell: powershell
+        run: kubectl apply -f k8s/deployment.yaml
+
+      - name: Rollout restart
+        shell: powershell
+        run: |
+          kubectl rollout restart deployment/whoami -n demo
+          kubectl rollout status deployment/whoami -n demo
+
+      - name: Show result
+        shell: powershell
+        run: kubectl get deployment,svc,pods -n demo
